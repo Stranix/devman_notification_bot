@@ -15,8 +15,10 @@ def main():
         headers = {
             'Authorization': 'Token {}'.format(devman_token)
         }
-        response = requests.get(url, headers=headers)
-        pprint(response.json())
+
+        while True:
+            response = requests.get(url, headers=headers)
+            pprint(response.json())
     except KeyError:
         print('Не задан токен в переменной окружения DEVMAN_TOKEN')
 
