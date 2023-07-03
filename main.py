@@ -11,7 +11,7 @@ def main():
     try:
         devman_token = os.environ['DEVMAN_TOKEN']
 
-        url = 'https://dvmn.org/api/user_reviews/'
+        url = 'https://dvmn.org/api/long_polling/'
         headers = {
             'Authorization': 'Token {}'.format(devman_token)
         }
