@@ -33,3 +33,23 @@ def send_long_pooling_request(
                 '5 сек'
             )
             time.sleep(5)
+
+
+def tg_bot_send_message(
+        tg_bot_token: str,
+        chat_id: int,
+        message: str,
+        parse_mode: str = 'HTML'
+):
+    tg_url = 'https://api.telegram.org/bot{}/sendMessage'.format(tg_bot_token)
+    params = {
+        'chat_id': chat_id,
+        'text': message,
+        'parse_mode': parse_mode,
+    }
+
+    response = requests.get(tg_url, params=params)
+    tg_api = response.json()
+    print(tg_api)
+    if not tg_api['ok']:
+        raise requests.exceptions.HTTPError
