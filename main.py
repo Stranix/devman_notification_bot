@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 
 from pprint import pprint
@@ -7,19 +8,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def send_request(url: str, token: str):
+def send_request(url: str, token: str, timeout=95):
     headers = {
         'Authorization': 'Token {}'.format(token)
     }
 
     while True:
         try:
-            response = requests.get(url, headers=headers)
+            print('Отправка запроса на', url)
+            response = requests.get(url, headers=headers, timeout=timeout)
             response.raise_for_status()
             pprint(response.json())
         except requests.exceptions.ReadTimeout:
             print('Тайм-аут ожидания ответа от сервера')
-            print('Отправляю новый запрос')
+        except requests.exceptions.ConnectionError:
+            print(
+                'Нет интернета. Попробуем отправить повторный запрос через '
+                '5 сек'
+            )
+            time.sleep(5)
 
 
 def main():
