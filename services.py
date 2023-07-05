@@ -40,16 +40,16 @@ def start_polling(timeout: int = 95):
         try:
             response = send_request(params, timeout)
             response.raise_for_status()
-            devman_api = response.json()
+            devman_api_response = response.json()
 
-            if devman_api['status'] == 'timeout':
-                params['timestamp'] = devman_api['timestamp_to_request']
+            if devman_api_response['status'] == 'timeout':
+                params['timestamp'] = devman_api_response['timestamp_to_request']
                 print('Задан параметр timestamp',
-                      devman_api['timestamp_to_request'])
+                      devman_api_response['timestamp_to_request'])
 
-            if devman_api['status'] == 'found':
-                params['timestamp'] = devman_api['last_attempt_timestamp']
-                for attempt in devman_api['new_attempts']:
+            if devman_api_response['status'] == 'found':
+                params['timestamp'] = devman_api_response['last_attempt_timestamp']
+                for attempt in devman_api_response['new_attempts']:
                     notification_message = create_notification_message(attempt)
                     tg_bot_send_message(notification_message)
         except requests.exceptions.HTTPError:
