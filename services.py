@@ -51,11 +51,11 @@ def start_polling(timeout: int = 95):
                 params['timestamp'] = devman_api_response['last_attempt_timestamp']
                 for attempt in devman_api_response['new_attempts']:
                     notification_message = create_notification_message(attempt)
-                    tg_bot_send_message(notification_message)
+                    send_message_from_tg_bot(notification_message)
         except requests.exceptions.HTTPError:
             print('Ошибка HTTP. Код ответа не 200')
         except requests.exceptions.ReadTimeout:
-            print('Тайм-аут ожидания ответа от сервера')
+            pass
         except requests.exceptions.ConnectionError:
             print(
                 'Нет соединения. Попробуем отправить повторный запрос через '
@@ -94,7 +94,7 @@ def send_request(params: dict, timeout: Any = None) -> requests.Response:
     return response
 
 
-def tg_bot_send_message(
+def send_message_from_tg_bot(
         message: str,
         parse_mode: str = 'HTML'
 ):
@@ -107,8 +107,11 @@ def tg_bot_send_message(
 
     """
     print('Отправка сообщения через телеграм бота')
-    tg_bot_url = urljoin(settings.tg_api_url, f'/bot{settings.tg_bot_token}')
-    send_message_url = tg_bot_url + '/sendMessage'
+    send_message_url = urljoin(
+        settings.tg_api_url,
+        f'/bot{settings.tg_bot_token}/sendMessage',
+    )
+
     params = {
         'chat_id': settings.tg_recipient_chat_id,
         'text': message,
@@ -116,7 +119,8 @@ def tg_bot_send_message(
     }
 
     response = requests.get(send_message_url, params=params)
+    response.raise_for_status()
     tg_api = response.json()
 
-    if not tg_api['ok']:
-        raise requests.exceptions.HTTPError
+    if not tg_api.get('ok'):
+        print('Не смог отправить сообщение')
