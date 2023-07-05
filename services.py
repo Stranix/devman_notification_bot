@@ -52,8 +52,8 @@ def start_polling(timeout: int = 95):
                 for attempt in devman_api_response['new_attempts']:
                     notification_message = create_notification_message(attempt)
                     send_message_from_tg_bot(notification_message)
-        except requests.exceptions.HTTPError:
-            print('Ошибка HTTP. Код ответа не 200')
+        except requests.exceptions.HTTPError as err:
+            print(err.response)
         except requests.exceptions.ReadTimeout:
             pass
         except requests.exceptions.ConnectionError:
