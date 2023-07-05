@@ -8,11 +8,15 @@ from services import start_polling
 def main():
     try:
         start_polling()
-    except KeyboardInterrupt:
-        print('Работа остановлена')
+    except KeyError:
+        print('Заданы не все настройки переменных окружения.')
         sys.exit()
 
 
 if __name__ == '__main__':
-    load_dotenv()
-    main()
+    try:
+        load_dotenv()
+        main()
+    except KeyboardInterrupt:
+        print('Работа остановлена')
+        sys.exit()
