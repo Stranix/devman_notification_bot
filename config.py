@@ -35,7 +35,6 @@ def settings_init() -> Settings:
     try:
         parser = create_arg_parser()
         args = parser.parse_args()
-        print(args)
         return Settings(
             devman_api_url='https://dvmn.org/api/',
             devman_token=os.environ['DEVMAN_TOKEN'],
