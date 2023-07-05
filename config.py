@@ -4,6 +4,8 @@ import argparse
 
 from dataclasses import dataclass
 
+from dotenv import load_dotenv
+
 
 @dataclass
 class Settings:
@@ -32,15 +34,20 @@ def create_arg_parser():
 
 def settings_init() -> Settings:
     """Инициализируем настройки которые нужны для работы приложения"""
-    parser = create_arg_parser()
-    args = parser.parse_args()
-    return Settings(
-        devman_api_url='https://dvmn.org/api/',
-        devman_token=os.environ['DEVMAN_TOKEN'],
-        tg_api_url='https://api.telegram.org/',
-        tg_bot_token=os.environ['TG_BOT_TOKEN'],
-        tg_recipient_chat_id=args.chat_id
-    )
+    try:
+        load_dotenv()
+        parser = create_arg_parser()
+        args = parser.parse_args()
+        return Settings(
+            devman_api_url='https://dvmn.org/api/',
+            devman_token=os.environ['DEVMAN_TOKEN'],
+            tg_api_url='https://api.telegram.org/',
+            tg_bot_token=os.environ['TG_BOT_TOKEN'],
+            tg_recipient_chat_id=args.chat_id
+        )
+    except KeyError:
+        print('Заданы не все настройки переменных окружения.')
+        sys.exit()
 
 
 settings = settings_init()
