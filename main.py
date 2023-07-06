@@ -9,16 +9,12 @@ from services import start_polling
 def create_arg_parser():
     description = 'Отправляем уведомления о проверке уроков devman в telegram'
 
-    arg_parser = argparse.ArgumentParser(
-        description=description,
-    )
-
+    arg_parser = argparse.ArgumentParser(description=description)
     arg_parser.add_argument('chat_id', metavar='', type=int,
                             help='''id телеграм чата куда бот будет отправлять
                             уведомления.
                             '''
                             )
-
     return arg_parser
 
 
