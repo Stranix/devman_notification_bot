@@ -2,18 +2,15 @@ import time
 
 import requests
 
-from typing import Any
 from urllib.parse import urljoin
-
-from config import settings
 
 
 def create_notification_message(attempt: dict) -> str:
     """Создаем информационное сообщение для отправки в телеграм чат.
 
-    :param attempt: dict - словарь с информацией о проверенном уроке.
+    :param attempt: словарь с информацией о проверенном уроке.
 
-    :return: str - информационное сообщение.
+    :return: информационное сообщение.
     """
     lesson_title = attempt['lesson_title']
     lesson_url = attempt['lesson_url']
@@ -27,31 +24,51 @@ def create_notification_message(attempt: dict) -> str:
     return message
 
 
-def start_polling(timeout: int = 95):
+def start_polling(
+        devman_token: str,
+        tg_bot_token: str,
+        tg_recipient_chat_id: int,
+        timeout: int = 95):
     """Запускаем долгие запросы на Devman API.
 
     В случаи обнаружения проверенной работы будет отправлено уведомление
     в телеграм чат.
 
-    :param timeout: int - время ожидания ответа от сервера. По умолчанию 95 сек
+    :param devman_token: токен авторизации devman api.
+    :param tg_bot_token: токен телеграм бота который будет отправлять сообщения.
+    :param tg_recipient_chat_id: время ожидания ответа от сервера. По умолчанию 95 сек.
+    :param timeout: время ожидания ответа от сервера. По умолчанию 95 сек.
     """
+    devman_api_url = 'https://dvmn.org/api/long_polling/'
+    headers = {
+        'Authorization': 'Token {}'.format(devman_token),
+    }
     params = {}
     while True:
         try:
-            response = send_request(params, timeout)
+            response = requests.get(
+                devman_api_url,
+                params=params,
+                headers=headers,
+                timeout=timeout
+            )
             response.raise_for_status()
-            devman_api_response = response.json()
+            devman_review = response.json()
 
-            if devman_api_response['status'] == 'timeout':
-                params['timestamp'] = devman_api_response['timestamp_to_request']
-                print('Задан параметр timestamp',
-                      devman_api_response['timestamp_to_request'])
+            if devman_review['status'] == 'timeout':
+                params['timestamp'] = devman_review['timestamp_to_request']
+                print('Задан параметр timestamp', devman_review['timestamp_to_request'])
 
-            if devman_api_response['status'] == 'found':
-                params['timestamp'] = devman_api_response['last_attempt_timestamp']
-                for attempt in devman_api_response['new_attempts']:
+            if devman_review['status'] == 'found':
+                params['timestamp'] = devman_review['last_attempt_timestamp']
+                for attempt in devman_review['new_attempts']:
                     notification_message = create_notification_message(attempt)
-                    send_message_from_tg_bot(notification_message)
+
+                    send_message_from_tg_bot(
+                        tg_bot_token,
+                        tg_recipient_chat_id,
+                        notification_message
+                    )
         except requests.exceptions.HTTPError as err:
             print(err.response)
         except requests.exceptions.ReadTimeout:
@@ -64,37 +81,9 @@ def start_polling(timeout: int = 95):
             time.sleep(5)
 
 
-def send_request(params: dict, timeout: Any = None) -> requests.Response:
-    """Отправляем запросы на указанный url.
-
-    Настройки url берутся из переменных окружения.
-
-    В случаи обнаружения проверенной работы будет отправлено уведомление
-    в телеграм чат.
-
-    :param params: параметры запроса в виде словаря.
-    :param timeout: время ожидания ответа от сервера. По умолчанию None.
-
-    :return: requests.Response - объект успешного ответа.
-    """
-    url = urljoin(settings.devman_api_url, 'long_polling/')
-    print('Отправка запроса на', url, 'с параметрами', params)
-    headers = {
-        'Authorization': 'Token {}'.format(settings.devman_token),
-    }
-
-    response = requests.get(
-        url,
-        params=params,
-        headers=headers,
-        timeout=timeout
-    )
-    response.raise_for_status()
-    print('Запрос выполнен')
-    return response
-
-
 def send_message_from_tg_bot(
+        token: str,
+        chat_id: int,
         message: str,
         parse_mode: str = 'HTML'
 ):
@@ -102,18 +91,20 @@ def send_message_from_tg_bot(
 
     Настройки chat_id берется из параметров скрипта при старте.
 
-    :param message: str - сообщение для отправки.
-    :param parse_mode: str - режим парсинга сообщения со стороны телеграм. По умолчанию 'HTML'.
+    :param token: токен телеграм бота, который отправляет сообщение.
+    :param chat_id: телеграм чат id куда отправляем сообщение.
+    :param message: сообщение для отправки.
+    :param parse_mode: режим парсинга сообщения со стороны телеграм. По умолчанию 'HTML'.
 
     """
     print('Отправка сообщения через телеграм бота')
     send_message_url = urljoin(
-        settings.tg_api_url,
-        f'/bot{settings.tg_bot_token}/sendMessage',
+        'https://api.telegram.org/',
+        f'/bot{token}/sendMessage',
     )
 
     params = {
-        'chat_id': settings.tg_recipient_chat_id,
+        'chat_id': chat_id,
         'text': message,
         'parse_mode': parse_mode,
     }
