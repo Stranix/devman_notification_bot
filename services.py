@@ -97,6 +97,8 @@ def start_polling(
                 '5 сек'
             )
             time.sleep(5)
+        except Exception as err:
+            logger.exception(err)
 
 
 def send_message_from_tg_bot(
