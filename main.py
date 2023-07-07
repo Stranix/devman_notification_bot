@@ -40,6 +40,8 @@ def main():
         logger.critical('Заданы не все настройки переменных окружения.')
     except KeyboardInterrupt:
         logger.warning('Работа остановлена')
+    except Exception as err:
+        logger.exception(err)
 
 
 if __name__ == '__main__':
