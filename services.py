@@ -1,8 +1,23 @@
 import time
+import logging
 
 import requests
 
 from urllib.parse import urljoin
+
+logger = logging.getLogger('devman_bot')
+
+
+class TelegramLogsHandler(logging.Handler):
+
+    def __init__(self, tg_token: str, chat_id: int):
+        super().__init__()
+        self.chat_id = chat_id
+        self.tg_token = tg_token
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        send_message_from_tg_bot(self.tg_token, self.chat_id, log_entry)
 
 
 def create_notification_message(attempt: dict) -> str:
@@ -57,7 +72,10 @@ def start_polling(
 
             if devman_review['status'] == 'timeout':
                 params['timestamp'] = devman_review['timestamp_to_request']
-                print('Задан параметр timestamp', devman_review['timestamp_to_request'])
+                logger.debug(
+                    'Задан параметр timestamp %s',
+                    devman_review['timestamp_to_request']
+                )
 
             if devman_review['status'] == 'found':
                 params['timestamp'] = devman_review['last_attempt_timestamp']
@@ -70,11 +88,11 @@ def start_polling(
                         notification_message
                     )
         except requests.exceptions.HTTPError as err:
-            print(err.response)
+            logger.error(err.response)
         except requests.exceptions.ReadTimeout:
             pass
         except requests.exceptions.ConnectionError:
-            print(
+            logger.error(
                 'Нет соединения. Попробуем отправить повторный запрос через '
                 '5 сек'
             )
@@ -97,7 +115,7 @@ def send_message_from_tg_bot(
     :param parse_mode: режим парсинга сообщения со стороны телеграм. По умолчанию 'HTML'.
 
     """
-    print('Отправка сообщения через телеграм бота')
+    logger.debug('Отправка сообщения через телеграм бота')
     send_message_url = urljoin(
         'https://api.telegram.org/',
         f'/bot{token}/sendMessage',
@@ -114,4 +132,4 @@ def send_message_from_tg_bot(
     tg_api = response.json()
 
     if not tg_api.get('ok'):
-        print('Не смог отправить сообщение')
+        logger.warning('Не смог отправить сообщение: %s', tg_api)
